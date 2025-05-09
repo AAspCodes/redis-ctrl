@@ -1,0 +1,24 @@
+image:
+  repository: aaspcodes/redis-ctrl
+  tag: "latest"
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+redis:
+  host: redis-service
+  port: "6379"
+  password: ""  # Will be configured later
+
+serviceAccount:
+  create: true
+  name: ""
+
+rbac:
+  create: true 

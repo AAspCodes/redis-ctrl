@@ -1,0 +1,32 @@
+image:
+  repository: redis
+  tag: "7.2.4"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 6379
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+persistence:
+  enabled: false  # Will be enabled later
+  size: 1Gi
+  storageClass: ""
+
+# Security settings - will be configured later
+auth:
+  enabled: false
+  password: ""
+
+# Redis configuration
+redis:
+  config:
+    maxmemory: "200mb"
+    maxmemory_policy: "allkeys-lru" 

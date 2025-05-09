@@ -1,0 +1,7 @@
+apiVersion: redis.aaspcodes.github.io/v1alpha1
+kind: RedisEntry
+metadata:
+  name: test-entry-2
+spec:
+  key: wow
+  value: "im impressed with you cursor"

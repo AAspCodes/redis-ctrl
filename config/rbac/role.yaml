@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - redis.aaspcodes.github.io
+  resources:
+  - redisentries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.aaspcodes.github.io
+  resources:
+  - redisentries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.aaspcodes.github.io
+  resources:
+  - redisentries/status
+  verbs:
+  - get
+  - patch
+  - update

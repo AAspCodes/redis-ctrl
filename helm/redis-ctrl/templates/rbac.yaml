@@ -1,0 +1,46 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-manager-role
+rules:
+- apiGroups:
+  - redis.aaspcodes.github.io
+  resources:
+  - redisentries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.aaspcodes.github.io
+  resources:
+  - redisentries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redis.aaspcodes.github.io
+  resources:
+  - redisentries/finalizers
+  verbs:
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-manager-role
+subjects:
+- kind: ServiceAccount
+  name: {{ include "redis-ctrl.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }} 

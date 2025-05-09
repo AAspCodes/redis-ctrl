@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-controller
+  labels:
+    app: redis-ctrl
+    release: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-ctrl
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: redis-ctrl
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "redis-ctrl.serviceAccountName" . }}
+      containers:
+      - name: manager
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: REDIS_HOST
+          value: "{{ .Values.redis.host }}"
+        - name: REDIS_PORT
+          value: "{{ .Values.redis.port }}"
+        {{- if .Values.redis.password }}
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-redis
+              key: redis-password
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }} 
