@@ -1,12 +1,14 @@
 module github.com/AAspCodes/redis-ctrl
 
-go 1.23.0
+go 1.24
 
-godebug default=go1.23
+godebug default=go1.24
 
 require (
+	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
+	github.com/redis/go-redis/v9 v9.8.0
 	k8s.io/apimachinery v0.32.1
 	k8s.io/client-go v0.32.1
 	sigs.k8s.io/controller-runtime v0.20.4
@@ -56,7 +58,6 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect

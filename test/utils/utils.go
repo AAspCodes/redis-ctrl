@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package utils provides test utilities for the Redis controller.
+// It includes functions for managing test environments, running commands,
+// and handling test-specific operations.
 package utils
 
 import (
@@ -197,7 +200,7 @@ func GetProjectDir() (string, error) {
 	if err != nil {
 		return wd, err
 	}
-	wd = strings.Replace(wd, "/test/e2e", "", -1)
+	wd = strings.ReplaceAll(wd, "/test/e2e", "")
 	return wd, nil
 }
 
@@ -247,9 +250,11 @@ func UncommentCode(filename, target, prefix string) error {
 	}
 	// false positive
 	// nolint:gosec
-	return os.WriteFile(filename, out.Bytes(), 0644)
+	return os.WriteFile(filename, out.Bytes(), 0o644)
 }
 
+// RunCommand executes a shell command and redirects its output to GinkgoWriter.
+// It's used for running commands during tests with proper output capturing.
 func RunCommand(command string) error {
 	_, _ = fmt.Fprintf(ginkgo.GinkgoWriter, "running: %s\n", command)
 	cmd := exec.Command("sh", "-c", command)
