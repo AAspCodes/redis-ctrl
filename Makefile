@@ -94,9 +94,9 @@ test-e2e: manifests generate fmt vet ## Run the e2e tests. Expected an isolated 
 	go test ./test/e2e/ -v -ginkgo.v
 
 .PHONY: lint
-lint: ## Run golangci-lint
+lint: golangci-lint ## Run golangci-lint
 	@echo "Running golangci-lint..."
-	@golangci-lint run
+	@$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
