@@ -1,43 +1,59 @@
-run:
-  deadline: 5m
-
-issues:
-  exclude-dirs:
-    - vendor
-    - bin
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gosec
-
+version: "2"
 linters:
   enable:
-    - gofmt
-    - goimports
-    - govet
-    - errcheck
-    - staticcheck
-    - gosimple
-    - ineffassign
-    - unused
-    - misspell
     - gosec
-    - revive
+    - misspell
     - predeclared
-
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  misspell:
-    locale: US
-  revive:
+    - revive
+  settings:
+    dupl:
+      threshold: 100
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gocyclo:
+      min-complexity: 15
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - disableStutteringCheck
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: exported
-        arguments:
-          - disableStutteringCheck
+      - linters:
+          - gosec
+        path: _test\.go$
+      - linters:
+          - gosec
+        path: test/e2e/.*\.go$
+      - linters:
+          - gosec
+        path: test/utils/utils\.go
+    paths:
+      - vendor
+      - bin
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - vendor
+      - bin
+      - third_party$
+      - builtin$
+      - examples$
