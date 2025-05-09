@@ -41,6 +41,12 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: clean
+clean: ## Remove generated files and build artifacts
+	rm -rf bin/
+	rm -rf dist/
+	rm -f cover.out
+
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -50,13 +56,13 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
-fmt: ## Run go fmt against code.
-	go fmt ./...
+fmt: gofumpt ## Run gofumpt against code.
+	$(GOFUMPT) -w .
 
 .PHONY: check-fmt
-check-fmt: ## Check if the code is properly formatted
+check-fmt: gofumpt ## Check if the code is properly formatted
 	@echo "Checking code formatting..."
-	@test -z $$(gofmt -l $$(find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./bin/*"))
+	@test -z $$($(GOFUMPT) -l .)
 
 .PHONY: vet
 vet: ## Run go vet
@@ -181,6 +187,7 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
+GOFUMPT = $(LOCALBIN)/gofumpt
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.6.0
@@ -190,6 +197,7 @@ ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 GOLANGCI_LINT_VERSION ?= v2.1.6
+GOFUMPT_VERSION ?= v0.6.0
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
@@ -218,6 +226,11 @@ $(ENVTEST): $(LOCALBIN)
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+
+.PHONY: gofumpt
+gofumpt: $(GOFUMPT) ## Download gofumpt locally if necessary.
+$(GOFUMPT): $(LOCALBIN)
+	$(call go-install-tool,$(GOFUMPT),mvdan.cc/gofumpt,$(GOFUMPT_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
