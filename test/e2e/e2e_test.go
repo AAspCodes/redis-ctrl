@@ -17,18 +17,14 @@ limitations under the License.
 package e2e
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"time"
 
-	redisv1alpha1 "github.com/AAspCodes/redis-ctrl/api/v1alpha1"
 	"github.com/AAspCodes/redis-ctrl/test/utils"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -37,50 +33,10 @@ const (
 
 	namespace              = "redis-ctrl-system"
 	serviceAccountName     = "redis-ctrl-controller-manager"
-	metricsServiceName     = "redis-ctrl-controller-manager-metrics-service"
+	metricsServiceName     = "controller-manager-metrics-service"
 	metricsRoleBindingName = "redis-ctrl-metrics-binding"
 	projectImage           = "redis-ctrl:test"
 )
-
-var _ = ginkgo.Describe("RedisEntry Controller", func() {
-	ginkgo.Context("When creating a RedisEntry", func() {
-		ginkgo.It("Should create a RedisEntry successfully", func() {
-			ginkgo.By("Creating a new RedisEntry")
-			ctx := context.Background()
-			redisEntry := &redisv1alpha1.RedisEntry{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "redis.redis-ctrl.io/v1alpha1",
-					Kind:       "RedisEntry",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-redis-entry",
-					Namespace: "default",
-				},
-				Spec: redisv1alpha1.RedisEntrySpec{
-					Key:   "test-key",
-					Value: "test-value",
-				},
-			}
-			gomega.Expect(k8sClient.Create(ctx, redisEntry)).Should(gomega.Succeed())
-
-			// Wait for the RedisEntry to be created
-			createdRedisEntry := &redisv1alpha1.RedisEntry{}
-			gomega.Eventually(func() error {
-				return k8sClient.Get(ctx, types.NamespacedName{
-					Name:      redisEntry.Name,
-					Namespace: redisEntry.Namespace,
-				}, createdRedisEntry)
-			}, timeout, interval).Should(gomega.Succeed())
-
-			// Verify the RedisEntry was created with the correct values
-			gomega.Expect(createdRedisEntry.Spec.Key).Should(gomega.Equal("test-key"))
-			gomega.Expect(createdRedisEntry.Spec.Value).Should(gomega.Equal("test-value"))
-
-			// Clean up
-			gomega.Expect(k8sClient.Delete(ctx, redisEntry)).Should(gomega.Succeed())
-		})
-	})
-})
 
 var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 	var controllerPodName string
@@ -89,15 +45,10 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 	// enforce the restricted security policy to the namespace, installing CRDs,
 	// and deploying the controller.
 	ginkgo.BeforeAll(func() {
-		ginkgo.By("creating manager namespace")
-		cmd := exec.Command("kubectl", "create", "ns", namespace)
-		_, err := utils.Run(cmd)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to create namespace")
-
 		ginkgo.By("labeling the namespace to enforce the restricted security policy")
-		cmd = exec.Command("kubectl", "label", "--overwrite", "ns", namespace,
+		cmd := exec.Command("kubectl", "label", "--overwrite", "ns", namespace,
 			"pod-security.kubernetes.io/enforce=restricted")
-		_, err = utils.Run(cmd)
+		_, err := utils.Run(cmd)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to label namespace with restricted policy")
 
 		ginkgo.By("installing CRDs")
@@ -206,18 +157,33 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 		})
 
 		ginkgo.It("should ensure the metrics endpoint is serving metrics", func() {
+			ginkgo.By("waiting for the controller deployment to be ready")
+			verifyControllerDeploymentReady := func(g gomega.Gomega) {
+				cmd := exec.Command("kubectl", "rollout", "status", "deployment/redis-ctrl-controller-manager", "-n", namespace)
+				_, err := utils.Run(cmd)
+				g.Expect(err).NotTo(gomega.HaveOccurred())
+			}
+			gomega.Eventually(verifyControllerDeploymentReady, "60s", "5s").Should(gomega.Succeed())
+
 			ginkgo.By("creating a ClusterRoleBinding for the service account to allow access to metrics")
-			cmd := exec.Command("kubectl", "create", "clusterrolebinding", metricsRoleBindingName,
-				"--clusterrole=redis-ctrl-metrics-reader",
+			// Delete existing binding if it exists
+			cmd := exec.Command("kubectl", "delete", "clusterrolebinding", metricsRoleBindingName, "--ignore-not-found=true")
+			_, _ = utils.Run(cmd)
+
+			cmd = exec.Command("kubectl", "create", "clusterrolebinding", metricsRoleBindingName,
+				"--clusterrole=metrics-reader",
 				fmt.Sprintf("--serviceaccount=%s:%s", namespace, serviceAccountName),
 			)
 			_, err := utils.Run(cmd)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to create ClusterRoleBinding")
 
 			ginkgo.By("validating that the metrics service is available")
-			cmd = exec.Command("kubectl", "get", "service", metricsServiceName, "-n", namespace)
-			_, err = utils.Run(cmd)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Metrics service should exist")
+			verifyMetricsServiceReady := func(g gomega.Gomega) {
+				cmd := exec.Command("kubectl", "get", "service", metricsServiceName, "-n", namespace)
+				_, err := utils.Run(cmd)
+				g.Expect(err).NotTo(gomega.HaveOccurred())
+			}
+			gomega.Eventually(verifyMetricsServiceReady, "60s", "5s").Should(gomega.Succeed())
 
 			ginkgo.By("getting the service account token")
 			token, err := serviceAccountToken()

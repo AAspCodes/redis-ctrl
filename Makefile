@@ -47,6 +47,10 @@ clean: ## Remove generated files and build artifacts
 	rm -rf dist/
 	rm -f cover.out
 
+.PHONY: clean-e2e
+clean-e2e: ## Clean up the E2E test environment (kind cluster)
+	./test/e2e/scripts/cleanup.sh
+
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -82,16 +86,8 @@ local-test: manifests generate lint setup-envtest ## Run tests locally with all 
 # CertManager is installed by default; skip with:
 # - CERT_MANAGER_INSTALL_SKIP=true
 .PHONY: test-e2e
-test-e2e: manifests generate fmt vet ## Run the e2e tests. Expected an isolated environment using Kind.
-	@command -v $(KIND) >/dev/null 2>&1 || { \
-		echo "Kind is not installed. Please install Kind manually."; \
-		exit 1; \
-	}
-	@$(KIND) get clusters | grep -q 'kind' || { \
-		echo "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."; \
-		exit 1; \
-	}
-	go test ./test/e2e/ -v -ginkgo.v
+test-e2e: clean-e2e manifests generate  ## Run the e2e tests. Expected an isolated environment using Kind.
+	./test/e2e/scripts/run.sh
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint
