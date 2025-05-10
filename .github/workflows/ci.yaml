@@ -10,6 +10,8 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
@@ -18,8 +20,6 @@ jobs:
 
       - name: Set up Go
         uses: actions/setup-go@v5
-        permissions:
-          contents: read
         with:
           go-version-file: ./go.mod
           cache: true
