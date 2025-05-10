@@ -26,6 +26,7 @@ jobs:
           cache-dependency-path: |
             **/go.sum
             **/go.mod
+            **/bin/**
 
       - name: Check formatting
         run: make check-fmt
