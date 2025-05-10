@@ -18,8 +18,10 @@ jobs:
 
       - name: Set up Go
         uses: actions/setup-go@v5
+        permissions:
+          contents: read
         with:
-          go-version: '1.24'
+          go-version-file: ./go.mod
           cache: true
           cache-dependency-path: |
             **/go.sum
